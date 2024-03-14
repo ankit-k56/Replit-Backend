@@ -4,6 +4,7 @@ import (
 	// "github.com/go-chi/chi/v5"
 	// "github.com/go-chi/chi/v5/middleware"
 	"github.com/ankit-k56/Repelit/controllers"
+	"github.com/ankit-k56/Repelit/middleware"
 	"github.com/gin-gonic/gin"
 )
 
@@ -16,6 +17,7 @@ func NewRouter () *gin.Engine{
 	})
 	r.POST("/signup", controllers.Signup)
 	r.POST("/login", controllers.Login)
+	r.GET("/check",middleware.CheckAuth, controllers.Validated)
 	return r
 	
 
