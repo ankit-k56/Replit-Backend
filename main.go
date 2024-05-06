@@ -13,6 +13,11 @@ func init(){
 	initializers.SyncDatabase()
 }
 func main(){
+
+
+	
+
+
 	r := router.NewRouter();
 	fmt.Println("Repelit backend")
 	r.Run(":8080") 

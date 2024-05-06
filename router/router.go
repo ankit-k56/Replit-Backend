@@ -18,6 +18,7 @@ func NewRouter () *gin.Engine{
 	r.POST("/signup", controllers.Signup)
 	r.POST("/login", controllers.Login)
 	r.GET("/check",middleware.CheckAuth, controllers.Validated)
+	r.POST("/createProject", controllers.CreateProject)
 	return r
 	
 
