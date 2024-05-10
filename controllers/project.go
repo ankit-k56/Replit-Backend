@@ -1,6 +1,8 @@
 package controllers
 
 import (
+	"net/http"
+
 	"github.com/ankit-k56/Repelit/models"
 	awss3 "github.com/ankit-k56/Repelit/utils"
 
@@ -37,4 +39,24 @@ func CreateProject(c *gin.Context){
 
 
 	
+}
+
+func InialiseProject(c *gin.Context){
+	var body struct{
+		SourceString string `json:"srcString"`
+		DestinationString string `json:"dstString"`
+	}
+	// fmt.Println(body.SourceString)
+	if c.Bind(&body) != nil{
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid request"})
+		return
+	}
+	err := awss3.CopyS3Folder(body.SourceString, body.DestinationString)
+
+	if err != nil{
+		c.JSON(400, gin.H{"message": "Error copying folder"})
+		return
+	}
+	c.JSON(200, gin.H{"message": "Folder copied successfully"})
+
 }

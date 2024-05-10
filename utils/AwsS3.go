@@ -14,8 +14,8 @@ import (
 
 func Uploader(bucketName string,bucketKey string, filename string) (*manager.UploadOutput, error) {
 	// code to upload file
-
 	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion("us-east-1"))
+
 	
 	if err != nil {
 		log.Printf("Config error: %v", err)
@@ -27,6 +27,7 @@ func Uploader(bucketName string,bucketKey string, filename string) (*manager.Upl
 	if err != nil{
 		log.Println("File error:", err)
 	}
+	defer fl.Close();
 	// copyParams := &s3.CopyObjectInput{
 	// 	Bucket:     aws.String(os.Getenv("S3_BUCKET")),
 	// 	CopySource: aws.String(fmt.Sprintf("%s/%s", os.Getenv("S3_BUCKET"), "sourceKey")),
@@ -73,6 +74,64 @@ func Downloader() {
 		return
 	}
 	fmt.Println("Downloaded", numBytes, "bytes")
+
+}
+
+
+func CopyS3Folder (sourcePrefix string, destinationPrefix string)(error){
+	// fmt.Println("A"+  sourcePrefix)
+	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion("us-east-1"))
+	if err != nil {
+		log.Println("error:", err)
+		return err
+	}
+
+	ctx := context.Background();
+	svc := s3.NewFromConfig(cfg)
+
+	paginator := s3.NewListObjectsV2Paginator(svc,&s3.ListObjectsV2Input{
+		Bucket: aws.String("repelit-iam"),
+		Prefix: aws.String(sourcePrefix),
+	})
+	// fmt.Println(paginator.Prefix)
+
+	for paginator.HasMorePages(){
+		page, err := paginator.NextPage(ctx)
+		
+		if err != nil{
+			log.Fatal("Error in page loading: ", err)
+		}
+		fmt.Println(len(page.Contents))
+		for _, obj := range page.Contents{
+			if(obj.Key == nil){
+				return nil
+			}
+			
+			sourceKey := *obj.Key
+			// if !strings.HasPrefix(sourceKey, sourcePrefix) {
+			// 	continue // Skip objects that don't match the prefix
+			//   }
+			fmt.Println(sourceKey)
+		
+			destinationKey := destinationPrefix  + sourceKey
+			//Copying the object
+			_, err := svc.CopyObject(ctx, &s3.CopyObjectInput{
+				Bucket: aws.String("repelit-iam"),
+				CopySource: aws.String("repelit-iam/"+sourceKey),
+				Key: aws.String(destinationKey),
+
+			})
+			if err != nil{
+				log.Fatal("Error in copying object: ", err)
+				return err
+			}
+		}
+
+	
+	}
+	return nil
+
+
 
 }
 
