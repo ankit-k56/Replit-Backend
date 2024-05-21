@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -66,8 +67,8 @@ func Downloader() {
 
 	downloader := manager.NewDownloader(client)
 	numBytes, err := downloader.Download(context.TODO(), buffer, &s3.GetObjectInput{
-		Bucket: aws.String("my-bucket"), 
-		Key:    aws.String("my-key"),
+		Bucket: aws.String("repelit-iam"), 
+		Key:    aws.String("defined/"),
 	}, )
 	if err != nil {
 		log.Fatal("error:", err)
@@ -130,7 +131,65 @@ func CopyS3Folder (sourcePrefix string, destinationPrefix string)(error){
 	
 	}
 	return nil
+}
 
+func DownLoadFolder() error{
+	
+	cfg, err := config.LoadDefaultConfig(context.TODO(),config.WithRegion("us-east-1"))
+	if err!= nil{
+		log.Println("Error in config: ", err)
+		return err
+	}
+	client := s3.NewFromConfig(cfg)
+	manager := manager.NewDownloader(client)
+
+	paginator := s3.NewListObjectsV2Paginator(client, &s3.ListObjectsV2Input{
+		Bucket: aws.String("repelit-iam"),
+		Prefix: aws.String("defined/HtmlCss/"),
+
+	})
+
+	for paginator.HasMorePages(){
+		page, err := paginator.NextPage(context.TODO())
+		if err != nil{
+			log.Fatal("Error in page loading: ", err)
+			return err
+		}
+		for _, obj := range page.Contents{
+			if err := DowLoadFile(manager, "awsDownloads", "repelit-iam", *obj.Key); err != nil{
+				log.Fatal("Error in downloading file: ", err)
+				return err
+			}
+		}
+	}
+	return nil
+
+
+
+}
+
+func DowLoadFile(downloader *manager.Downloader, targetDirectory, bucketName, key string) error{
+	// fmt.Println("A"+  sourcePrefix)
+	file := filepath.Join(targetDirectory, key)
+	if err := os.MkdirAll(filepath.Dir(file), 0775); err != nil {
+		return err
+	}
+
+	// Set up the local file
+	fd, err := os.Create(file)
+	if err != nil {
+		return err
+	}
+	defer fd.Close()
+
+	// Download the file using the AWS SDK for Go
+	fmt.Printf("Downloading s3://%s/%s to %s...\n", bucketName, key, file)
+	_, err = downloader.Download(context.TODO(), fd, &s3.GetObjectInput{
+		Bucket: aws.String("repelit-iam"),
+		Key:    aws.String(key),
+	})
+
+	return err
 
 
 }

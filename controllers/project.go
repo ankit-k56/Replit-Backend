@@ -60,3 +60,13 @@ func InialiseProject(c *gin.Context){
 	c.JSON(200, gin.H{"message": "Folder copied successfully"})
 
 }
+
+func DownloadProject (c *gin.Context){
+	err :=awss3.DownLoadFolder()
+	if err != nil{
+		c.JSON(400, gin.H{"message": "Error downloading folder"})
+		return
+	}
+	c.JSON(200, gin.H{"message": "Downloaded successfully"})
+
+}
